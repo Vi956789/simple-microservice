@@ -17,18 +17,23 @@ pipeline {
             steps {
                 script {
                     // Check if the "green" container exists
-                    def greenExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-green"', returnStdout: true).trim() != ''
-                    def targetEnv = greenExists ? "blue" : "green"
+                    def greenExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-green"', returnStdout: true).trim()
 
-                    // Stop and remove the old container (if it exists)
-                    if (targetEnv == "green") {
-                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-blue"\') do docker stop %%i && docker rm %%i || echo Container not found'
-                    } else {
-                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-green"\') do docker stop %%i && docker rm %%i || echo Container not found'
+                    if (greenExists) {
+                        // If the container exists, stop and remove it
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-green"\') do docker stop %%i && docker rm %%i'
+                    }
+
+                    // Check if the "blue" container exists and remove it if found
+                    def blueExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-blue"', returnStdout: true).trim()
+
+                    if (blueExists) {
+                        // If the container exists, stop and remove it
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-blue"\') do docker stop %%i && docker rm %%i'
                     }
 
                     // Run the new container in the target environment
-                    bat "docker run -d --name simple-microservice-${targetEnv} -p 4001:3000 simple-microservice:${env.BUILD_ID}"
+                    bat "docker run -d --name simple-microservice-green -p 4001:3000 simple-microservice:${env.BUILD_ID}"
                 }
             }
         }
