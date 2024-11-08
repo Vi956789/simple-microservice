@@ -22,9 +22,9 @@ pipeline {
 
                     // Stop and remove the old container (if exists)
                     if (targetEnv == "green") {
-                        bat 'docker ps -a -q --filter name=simple-microservice-blue | ForEach-Object { docker stop $_; docker rm $_ } || echo Container not found'
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter name=simple-microservice-blue\') do docker stop %%i && docker rm %%i || echo Container not found'
                     } else {
-                        bat 'docker ps -a -q --filter name=simple-microservice-green | ForEach-Object { docker stop $_; docker rm $_ } || echo Container not found'
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter name=simple-microservice-green\') do docker stop %%i && docker rm %%i || echo Container not found'
                     }
                     
                     // Run the new container in the target environment
