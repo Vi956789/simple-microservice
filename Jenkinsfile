@@ -16,7 +16,7 @@ pipeline {
         stage('Blue-Green Deployment') {
             steps {
                 script {
-                    def greenExists = sh(script: 'docker ps -q --filter name=simple-microservice-green', returnStatus: true) == 0
+                    def greenExists = bat(script: 'docker ps -q --filter name=simple-microservice-green', returnStatus: true) == 0
                     def targetEnv = greenExists ? "blue" : "green"
                     bat "docker run -d --name simple-microservice-${targetEnv} -p 4000:3000 simple-microservice:${env.BUILD_ID}"
                     
