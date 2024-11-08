@@ -21,6 +21,8 @@ pipeline {
 
                     if (greenExists) {
                         bat "docker stop simple-microservice-green && docker rm simple-microservice-green"
+                    } else {
+                        echo "No green container found, skipping removal."
                     }
 
                     // Check if the "blue" container exists and stop/remove if found
@@ -28,6 +30,8 @@ pipeline {
 
                     if (blueExists) {
                         bat "docker stop simple-microservice-blue && docker rm simple-microservice-blue"
+                    } else {
+                        echo "No blue container found, skipping removal."
                     }
 
                     // Run the new container in the "green" environment (or switch based on condition)
