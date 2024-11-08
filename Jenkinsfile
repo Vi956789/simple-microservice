@@ -16,14 +16,14 @@ pipeline {
         stage('Blue-Green Deployment') {
             steps {
                 script {
-                    def greenExists = bat(script: 'docker ps -q --filter name=simple-microservice-green', returnStatus: true) == 0
+                    def greenExists = bat(script: 'docker ps -q --filter name=simple-microservice-green', returnStatus: echo) == 0
                     def targetEnv = greenExists ? "blue" : "green"
                     bat "docker run -d --name simple-microservice-${targetEnv} -p 4001:3000 simple-microservice:${env.BUILD_ID}"
                     
                     if (targetEnv == "green") {
-                        bat 'docker stop simple-microservice-blue || true && docker rm simple-microservice-blue || true'
+                        bat 'docker stop simple-microservice-blue || echo && docker rm simple-microservice-blue || echo'
                     } else {
-                        bat 'docker stop simple-microservice-green || true && docker rm simple-microservice-green || true'
+                        bat 'docker stop simple-microservice-green || echo && docker rm simple-microservice-green || echo'
                     }
                 }
             }
