@@ -8,7 +8,8 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/Vi956789/simple-microservice.git' // Replace with your GitHub repo URL
+                 git branch: 'main', url: 'https://github.com/Vi956789/simple-microservice.git'
+// Replace with your GitHub repo URL
             }
         }
 
