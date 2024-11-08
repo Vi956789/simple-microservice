@@ -16,17 +16,17 @@ pipeline {
         stage('Blue-Green Deployment') {
             steps {
                 script {
-                    // Check if the green container exists and is running
-                    def greenExists = bat(script: 'docker ps -q --filter name=simple-microservice-green', returnStdout: true).trim() != ''
+                    // Check if the "green" container exists
+                    def greenExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-green"', returnStdout: true).trim() != ''
                     def targetEnv = greenExists ? "blue" : "green"
 
-                    // Stop and remove the old container (if exists)
+                    // Stop and remove the old container (if it exists)
                     if (targetEnv == "green") {
-                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter name=simple-microservice-blue\') do docker stop %%i && docker rm %%i || echo Container not found'
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-blue"\') do docker stop %%i && docker rm %%i || echo Container not found'
                     } else {
-                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter name=simple-microservice-green\') do docker stop %%i && docker rm %%i || echo Container not found'
+                        bat 'for /f "tokens=*" %%i in (\'docker ps -a -q --filter "name=simple-microservice-green"\') do docker stop %%i && docker rm %%i || echo Container not found'
                     }
-                    
+
                     // Run the new container in the target environment
                     bat "docker run -d --name simple-microservice-${targetEnv} -p 4001:3000 simple-microservice:${env.BUILD_ID}"
                 }
