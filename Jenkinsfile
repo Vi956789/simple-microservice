@@ -1,51 +1,63 @@
 pipeline {
     agent any
+
+    environment {
+        IMAGE_NAME = "simple-microservice"   // Name of your Docker image
+    }
+
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'https://github.com/Vi956789/simple-microservice.git'
+                git 'https://github.com/Vi956789/simple-microservice.git' // Replace with your GitHub repo URL
             }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("simple-microservice:${env.BUILD_ID}")
+                    bat 'docker build -t %IMAGE_NAME% .'  // Build the Docker image locally
                 }
             }
         }
-        stage('Blue-Green Deployment') {
+
+        stage('Deploy Blue Environment') {
             steps {
                 script {
-                    // Check if the "green" container exists and stop/remove if found
-                    def greenExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-green"', returnStdout: true).trim()
+                    bat 'docker tag %IMAGE_NAME% %IMAGE_NAME%:blue'  // Tag the image for the Blue environment
+                    bat 'docker run -d -p 8081:3000 --name node-blue %IMAGE_NAME%:blue'  // Run in Blue environment
+                }
+            }
+        }
 
-                    if (greenExists) {
-                        bat "docker stop simple-microservice-green && docker rm simple-microservice-green"
+        stage('Deploy Green Environment') {
+            steps {
+                script {
+                    bat 'docker tag %IMAGE_NAME% %IMAGE_NAME%:green'  // Tag the image for the Green environment
+                    bat 'docker run -d -p 8082:3000 --name node-green %IMAGE_NAME%:green'  // Run in Green environment
+                }
+            }
+        }
+
+        stage('Trigger Blue or Green Deployment') {
+            steps {
+                script {
+                    // Optional: Add logic to switch between Blue and Green
+                    def deployTo = input message: 'Which environment to deploy?', parameters: [
+                        choice(name: 'Environment', choices: ['Blue', 'Green'], description: 'Choose environment')
+                    ]
+                    if (deployTo == 'Blue') {
+                        bat 'docker run -d -p 8081:3000 --name node-blue %IMAGE_NAME%:blue'
                     } else {
-                        echo "No green container found, skipping removal."
+                        bat 'docker run -d -p 8082:3000 --name node-green %IMAGE_NAME%:green'
                     }
-
-                    // Check if the "blue" container exists and stop/remove if found
-                    def blueExists = bat(script: 'docker ps -a -q --filter "name=simple-microservice-blue"', returnStdout: true).trim()
-
-                    if (blueExists) {
-                        bat "docker stop simple-microservice-blue && docker rm simple-microservice-blue"
-                    } else {
-                        echo "No blue container found, skipping removal."
-                    }
-
-                    // Run the new container in the "green" environment (or switch based on condition)
-                    bat "docker run -d --name simple-microservice-green -p 4001:3000 simple-microservice:${env.BUILD_ID}"
                 }
             }
         }
     }
+
     post {
-        success {
-            echo "Deployment successful!"
-        }
-        failure {
-            echo "Deployment failed!"
+        always {
+            cleanWs()  // Clean up workspace after job finishes
         }
     }
 }
